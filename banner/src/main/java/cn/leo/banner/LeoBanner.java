@@ -1,6 +1,9 @@
 package cn.leo.banner;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
@@ -38,11 +41,15 @@ public class LeoBanner extends FrameLayout {
      */
     private float mItemWidth;
     /**
+     * 自动轮播间隔
+     */
+    private float mScrollInterval = 3000;
+    /**
      * 存储所有图片路径
      */
     private List<String> mImages = new ArrayList<>();
     /**
-     * 图片适配
+     * 图片适配器
      */
     private ItemAdapter mAdapter;
     /**
@@ -53,6 +60,8 @@ public class LeoBanner extends FrameLayout {
      * 点击事件
      */
     private OnItemClickListener mOnItemClickListener;
+
+    private Handler mHandler;
 
 
     public LeoBanner(@NonNull Context context) {
@@ -70,6 +79,20 @@ public class LeoBanner extends FrameLayout {
 
     private void init() {
         initRecyclerView();
+        initHandler();
+    }
+
+    private void initHandler() {
+        mHandler = new Handler(Looper.myLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+            }
+        };
+    }
+
+    private void autoScroll() {
+
     }
 
     private void initRecyclerView() {
@@ -116,6 +139,14 @@ public class LeoBanner extends FrameLayout {
 
     public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
         mOnItemClickListener = onItemClickListener;
+    }
+
+    public void setAutoScroll(boolean autoScroll) {
+        mIsAutoScroll = autoScroll;
+    }
+
+    public void setItemWidthRatio(float itemWidthRatio) {
+        mItemWidthRatio = itemWidthRatio;
     }
 
     class ItemAdapter extends RecyclerView.Adapter<ItemHolder> implements OnClickListener {

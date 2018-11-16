@@ -24,4 +24,11 @@
 
     </cn.leo.banner.LeoBanner>
 
+    <cn.leo.banner.RhombusImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@mipmap/eee"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+
 </android.support.constraint.ConstraintLayout>
