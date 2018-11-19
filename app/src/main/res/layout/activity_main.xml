@@ -18,7 +18,7 @@
 
     <cn.leo.banner.LeoBanner
         android:id="@+id/banner"
-        android:layout_width="match_parent"
+        android:layout_width="410dp"
         android:layout_height="200dp"
         android:background="@color/colorAccent">
 

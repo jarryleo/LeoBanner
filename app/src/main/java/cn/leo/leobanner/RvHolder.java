@@ -8,7 +8,9 @@ import android.view.View;
  * @date : 2018/11/16 11:24
  */
 public class RvHolder extends RecyclerView.ViewHolder {
+
     public RvHolder(View itemView) {
         super(itemView);
     }
+
 }

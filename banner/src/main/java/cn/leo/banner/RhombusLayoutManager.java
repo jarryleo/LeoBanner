@@ -18,7 +18,7 @@ public class RhombusLayoutManager extends RecyclerView.LayoutManager {
      */
     private int mLastVisiblePosition;
     /**
-     * 滑动距离，notifyDataSetChanged时，保存位置
+     * 滑动距离
      */
     private int mHorizontalOffset;
 
@@ -43,17 +43,43 @@ public class RhombusLayoutManager extends RecyclerView.LayoutManager {
             detachAndScrapAttachedViews(recycler);
             return;
         }
-        //state.isPreLayout()是支持动画的
+        //state.isPreLayout()是支持动画的（重写supportsPredictiveItemAnimations()方法后必定执行2次，
+        // 一次PreLayout，一次真实layout，根据2次位置执行动画）
         if (getChildCount() == 0 && state.isPreLayout()) {
             return;
         }
-        //onLayoutChildren方法在RecyclerView 初始化时 会执行两遍,所以要把第一遍填充的轻回收
-        detachAndScrapAttachedViews(recycler);
-        //最后一个可见条目
-        mLastVisiblePosition = getItemCount();
 
         //初始化时调用 填充childView
-        fill(recycler, state, mHorizontalOffset);
+        fill(recycler, state);
+    }
+
+    /**
+     * 填充view 方法，需要支持 notify
+     */
+    private void fill(RecyclerView.Recycler recycler, RecyclerView.State state) {
+        int leftOffset = getPaddingLeft();
+        if (mHorizontalOffset > 0) {
+            //这是notify 进来
+
+        } else {
+            //这是初始化
+            //onLayoutChildren方法在RecyclerView 初始化时 会执行两遍,所以要把第一遍填充的轻回收
+            detachAndScrapAttachedViews(recycler);
+            mLastVisiblePosition = getItemCount();
+            for (int i = mFirstVisiblePosition; i <= mLastVisiblePosition; i++) {
+                View view = recycler.getViewForPosition(i);
+                addView(view);
+                measureChildWithMargins(view, 0, 0);
+                layoutDecoratedWithMargins(view, leftOffset, getPaddingTop(),
+                        leftOffset + getDecoratedMeasuredWidth(view),
+                        getPaddingTop() + getDecoratedMeasuredHeight(view));
+                leftOffset += getDecoratedMeasurementHorizontal(view);
+                if (leftOffset > getHorizontalSpace()) {
+                    mLastVisiblePosition = i;
+                    break;
+                }
+            }
+        }
     }
 
 
@@ -73,10 +99,10 @@ public class RhombusLayoutManager extends RecyclerView.LayoutManager {
         int realOffset = dx;
         //边界修复代码
         if (mHorizontalOffset + realOffset < 0) {
-            //上边界
+            //左边界
             realOffset = -mHorizontalOffset;
         } else if (realOffset > 0) {
-            //下边界
+            //右边界
             //利用最后一个子View比较修正
             View lastChild = getChildAt(getChildCount() - 1);
             if (getPosition(lastChild) == getItemCount() - 1) {
@@ -107,34 +133,75 @@ public class RhombusLayoutManager extends RecyclerView.LayoutManager {
      * @return 实际距离
      */
     private int fill(RecyclerView.Recycler recycler, RecyclerView.State state, int dx) {
-        int leftOffset = getPaddingLeft();
         //先回收越界view
         if (getChildCount() > 0) {
             //滑动时进来的
             for (int i = getChildCount() - 1; i >= 0; i--) {
                 View child = getChildAt(i);
                 if (dx > 0) {
-                    //需要回收当前屏幕，上越界的View
-                    if (getDecoratedBottom(child) - dx < leftOffset) {
+                    //需要回收当前屏幕，左越界的View
+                    if (getDecoratedLeft(child) + getDecoratedMeasuredWidth(child) - dx < getPaddingLeft()) {
                         removeAndRecycleView(child, recycler);
                         mFirstVisiblePosition++;
                     }
                 } else if (dx < 0) {
-                    //回收当前屏幕，下越界的View
-                    if (getDecoratedTop(child) - dx > getHeight() - getPaddingBottom()) {
+                    //回收当前屏幕，右越界的View
+                    if (getDecoratedLeft(child) - dx > getWidth() - getPaddingRight()) {
                         removeAndRecycleView(child, recycler);
                         mLastVisiblePosition--;
                     }
                 }
             }
-            //detachAndScrapAttachedViews(recycler);
         }
 
-        //todo 添加新的view
+        //todo 添加新的view,分左右方向添加，左滑添加右边，右滑添加左边
+        if (dx > 0) {
+            //左滑
+            //获取当前显示的最后一个view
+            View child = getChildAt(getChildCount() - 1);
+            int left = getDecoratedLeft(child);
+            int width = getDecoratedMeasuredWidth(child);
+            //找RecyclerView要一个新view（判断现在显示的最后一个view是不是adapter的最后一个）
+            if (mLastVisiblePosition < state.getItemCount() - 1) {
+                //如果可以要到
+                View view = recycler.getViewForPosition(++mLastVisiblePosition);
+                addView(view);
+                measureChildWithMargins(view, 0, 0);
+                layoutDecoratedWithMargins(view, left + width, getPaddingTop(),
+                        left + width + getDecoratedMeasuredWidth(view),
+                        getPaddingTop() + getDecoratedMeasuredHeight(view));
+            } else {
+                //如果要不到
+                int rightBoard = getWidth() - getPaddingRight();
+                return rightBoard - left;
+            }
+        } else {
+            //右滑
+            //拿到左边第一个显示的view
+            View firstVisibleView = getChildAt(0);
+            //获取第一个view的left
+            int left = getDecoratedLeft(firstVisibleView);
+            int leftOffset = left - getPaddingLeft();
+            if (leftOffset > 0) {
+                //左边漏空了，添加新的view，先判断前面是否还有view
+                if (mFirstVisiblePosition > 0) {
+                    //有View
+                    View view = recycler.getViewForPosition(--mLastVisiblePosition);
+                    //添加在左边
+                    addView(view, 0);
+                    measureChildWithMargins(view, 0, 0);
+                    layoutDecoratedWithMargins(view, left - getDecoratedMeasuredWidth(view),
+                            getPaddingTop(), left, getPaddingTop() + getDecoratedMeasuredHeight(view));
+                } else {
+                    //前面没有view了修正滑动值
+                    return -leftOffset;
+                }
+            }
 
-        //todo 修正dx
+        }
 
-        return 0;
+        //todo 修正dx 左滑到最后没有新的子view表示到了边界
+        return dx;
     }
 
     /**
