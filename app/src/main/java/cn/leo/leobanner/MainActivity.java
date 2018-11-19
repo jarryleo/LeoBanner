@@ -2,6 +2,7 @@ package cn.leo.leobanner;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.leo.banner.LeoBanner;
+import cn.leo.banner.InfiniteLayoutManager;
 
 /**
  * @author Leo
@@ -33,5 +35,9 @@ public class MainActivity extends AppCompatActivity {
                 Glide.with(MainActivity.this).load(imagePath).into(imageView);
             }
         });
+
+        RecyclerView recyclerView = findViewById(R.id.rvTest);
+        recyclerView.setLayoutManager(new InfiniteLayoutManager());
+        recyclerView.setAdapter(new RvAdapter());
     }
 }
