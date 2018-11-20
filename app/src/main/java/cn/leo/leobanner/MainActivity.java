@@ -2,6 +2,8 @@ package cn.leo.leobanner;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearSnapHelper;
 import android.support.v7.widget.RecyclerView;
 import android.widget.ImageView;
 
@@ -10,8 +12,9 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.leo.banner.LeoBanner;
+import cn.leo.banner.AniamtionDecoration;
 import cn.leo.banner.InfiniteLayoutManager;
+import cn.leo.banner.LeoBanner;
 
 /**
  * @author Leo
@@ -19,6 +22,7 @@ import cn.leo.banner.InfiniteLayoutManager;
 public class MainActivity extends AppCompatActivity {
 
     private LeoBanner mBanner;
+    private RecyclerView mRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,8 +40,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        RecyclerView recyclerView = findViewById(R.id.rvTest);
-        recyclerView.setLayoutManager(new InfiniteLayoutManager());
-        recyclerView.setAdapter(new RvAdapter());
+        mRecyclerView = findViewById(R.id.rvTest);
+        mRecyclerView.setLayoutManager(new InfiniteLayoutManager());
+        mRecyclerView.setAdapter(new RvAdapter());
+        new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
+        mRecyclerView.addItemDecoration(new AniamtionDecoration());
+
+        DefaultItemAnimator defaultItemAnimator = new DefaultItemAnimator();
+        defaultItemAnimator.setAddDuration(1000);
+        defaultItemAnimator.setRemoveDuration(1000);
+        mRecyclerView.setItemAnimator(defaultItemAnimator);
+
     }
 }

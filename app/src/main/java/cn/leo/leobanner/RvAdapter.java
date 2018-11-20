@@ -26,6 +26,6 @@ public class RvAdapter extends RecyclerView.Adapter<RvHolder> {
 
     @Override
     public int getItemCount() {
-        return 1;
+        return 5;
     }
 }
