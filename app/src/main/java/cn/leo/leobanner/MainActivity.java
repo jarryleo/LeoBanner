@@ -12,7 +12,7 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.leo.banner.AniamtionDecoration;
+import cn.leo.banner.AnimationDecoration;
 import cn.leo.banner.InfiniteLayoutManager;
 import cn.leo.banner.LeoBanner;
 
@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.setLayoutManager(new InfiniteLayoutManager());
         mRecyclerView.setAdapter(new RvAdapter());
         new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
-        mRecyclerView.addItemDecoration(new AniamtionDecoration());
+        mRecyclerView.addItemDecoration(new AnimationDecoration());
 
         DefaultItemAnimator defaultItemAnimator = new DefaultItemAnimator();
         defaultItemAnimator.setAddDuration(1000);
