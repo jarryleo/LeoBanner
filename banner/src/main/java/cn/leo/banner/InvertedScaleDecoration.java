@@ -55,8 +55,10 @@ public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
     private Paint paint = new Paint();
 
     private void drawInverted(Canvas c, View view, Rect rect, float scale) {
-        System.out.println(rect);
         Bitmap sourceBitmap = convertViewToBitmap(view);
+        if (sourceBitmap == null) {
+            return;
+        }
         //1.倒立图
         Matrix matrix = new Matrix();
         //以X轴向下翻转
