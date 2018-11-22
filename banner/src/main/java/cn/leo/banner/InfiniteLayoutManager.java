@@ -2,7 +2,6 @@ package cn.leo.banner;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
-import android.view.ViewGroup;
 
 /**
  * @author : Jarry Leo
@@ -27,7 +26,7 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
     public RecyclerView.LayoutParams generateDefaultLayoutParams() {
         return new RecyclerView.LayoutParams(
                 RecyclerView.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
+                RecyclerView.LayoutParams.WRAP_CONTENT);
     }
 
     /**
@@ -57,26 +56,62 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
      * 填充view 方法，需要支持 notify
      */
     private void fill(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        int leftOffset = getPaddingLeft();
+
         if (mHorizontalOffset > 0) {
-            //这是notify 进来 TODO
+            //这是notify进来
 
         } else {
+            int leftOffset;
             //这是初始化
             //onLayoutChildren方法在RecyclerView 初始化时 会执行两遍,所以要把第一遍填充的轻回收
             detachAndScrapAttachedViews(recycler);
             int index = mFirstVisiblePosition;
+            //第一个条目居中
+            View firstView = recycler.getViewForPosition(index % state.getItemCount());
+            addView(firstView);
+            measureChildWithMargins(firstView, 0, 0);
+            int firstWidth = getDecoratedMeasuredWidth(firstView);
+            leftOffset = getWidth() / 2 - firstWidth / 2;
+            int temLeft = leftOffset;
+            mHorizontalOffset = leftOffset - getPaddingLeft();
+            layoutDecoratedWithMargins(firstView,
+                    leftOffset,
+                    getPaddingTop(),
+                    leftOffset + firstWidth,
+                    getPaddingTop() + getDecoratedMeasuredHeight(firstView));
+            leftOffset += getDecoratedMeasurementHorizontal(firstView);
+            index++;
+            //往右排列
             while (leftOffset < getHorizontalSpace()) {
                 View view = recycler.getViewForPosition(index % state.getItemCount());
                 addView(view);
                 measureChildWithMargins(view, 0, 0);
-                layoutDecoratedWithMargins(view, leftOffset, getPaddingTop(),
-                        leftOffset + getDecoratedMeasuredWidth(view),
+                int childWidth = getDecoratedMeasuredWidth(view);
+                layoutDecoratedWithMargins(view,
+                        leftOffset,
+                        getPaddingTop(),
+                        leftOffset + childWidth,
                         getPaddingTop() + getDecoratedMeasuredHeight(view));
                 leftOffset += getDecoratedMeasurementHorizontal(view);
                 index++;
             }
             mLastVisiblePosition = index - 1;
+            //往左排列
+            index = getItemCount() - 1;
+            while (temLeft > getPaddingLeft()) {
+                mFirstVisiblePosition--;
+                View view = recycler.getViewForPosition(index % state.getItemCount());
+                addView(view, 0);
+                measureChildWithMargins(view, 0, 0);
+                int childWidth = getDecoratedMeasuredWidth(view);
+                layoutDecoratedWithMargins(view,
+                        temLeft - childWidth,
+                        getPaddingTop(),
+                        temLeft,
+                        getPaddingTop() + getDecoratedMeasuredHeight(view));
+                temLeft -= getDecoratedMeasurementHorizontal(view);
+                index--;
+            }
         }
     }
 

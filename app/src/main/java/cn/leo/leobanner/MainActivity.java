@@ -28,6 +28,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mRecyclerView = findViewById(R.id.rvTest);
+        mRecyclerView.setAdapter(new RvAdapter());
+        //无限循环
+        mRecyclerView.setLayoutManager(new InfiniteLayoutManager());
+        //滑动放大缩小动画
+        mRecyclerView.addItemDecoration(new AnimationDecoration());
+        //自动居中
+        new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
+
+        DefaultItemAnimator defaultItemAnimator = new DefaultItemAnimator();
+        defaultItemAnimator.setAddDuration(1000);
+        defaultItemAnimator.setRemoveDuration(1000);
+        mRecyclerView.setItemAnimator(defaultItemAnimator);
+
+    }
+
+    private void showLeoBanner() {
         mBanner = findViewById(R.id.banner);
         List<String> images = new ArrayList<>();
         images.add("https://b-ssl.duitang.com/uploads/item/201405/13/20140513232544_CGzh5.thumb.1400_0.jpeg");
@@ -39,17 +56,5 @@ public class MainActivity extends AppCompatActivity {
                 Glide.with(MainActivity.this).load(imagePath).into(imageView);
             }
         });
-
-        mRecyclerView = findViewById(R.id.rvTest);
-        mRecyclerView.setLayoutManager(new InfiniteLayoutManager());
-        mRecyclerView.setAdapter(new RvAdapter());
-        new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
-        mRecyclerView.addItemDecoration(new AnimationDecoration());
-
-        DefaultItemAnimator defaultItemAnimator = new DefaultItemAnimator();
-        defaultItemAnimator.setAddDuration(1000);
-        defaultItemAnimator.setRemoveDuration(1000);
-        mRecyclerView.setItemAnimator(defaultItemAnimator);
-
     }
 }
