@@ -1,6 +1,7 @@
 package cn.leo.banner;
 
 import android.graphics.Bitmap;
+import android.graphics.Camera;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
@@ -41,6 +42,7 @@ public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
             child.setScaleX(scale);
             child.setScaleY(scale);
 
+
             Rect rect = new Rect();
             child.getDrawingRect(rect);
             int height = rect.height() / 2;
@@ -57,14 +59,20 @@ public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
     }
 
     private Paint paint = new Paint();
+    private Camera camera = new Camera();
 
     private void drawInverted(Canvas c, View view, Rect rect, float scale) {
         Bitmap sourceBitmap = convertViewToBitmap(view);
         if (sourceBitmap == null) {
             return;
         }
+
         //1.倒立图
         Matrix matrix = new Matrix();
+        camera.save();
+        camera.rotateY(-30);
+        camera.getMatrix(matrix);
+        camera.restore();
         //以X轴向下翻转
         int width = rect.width();
         int height = rect.height();
