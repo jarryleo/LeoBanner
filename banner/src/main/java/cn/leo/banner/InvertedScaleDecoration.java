@@ -75,7 +75,7 @@ public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
         c.drawBitmap(revertBitmap, rect.left, rect.top, paint);
         //3.画笔使用LinearGradient 线性渐变渲染
         LinearGradient lg = new LinearGradient(0, 0,
-                0, height,
+                0, height * scale + 1,
                 0x70ffffff,
                 0x00ffffff,
                 Shader.TileMode.MIRROR);
@@ -83,7 +83,9 @@ public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
         //4.指定画笔的Xfermode 即绘制的模式（不同的模式，绘制的区域不同）
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
         //5.在倒立图区，绘制矩形渲染图层
-        c.drawRect(rect.left, rect.top, rect.left + rect.width() * scale, rect.top + rect.height(), paint);
+        c.drawRect(rect.left, rect.top,
+                rect.left + rect.width() * scale + 1,
+                rect.top + rect.height() * scale + 1, paint);
         paint.setXfermode(null);
     }
 

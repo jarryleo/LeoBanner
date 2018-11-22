@@ -58,8 +58,8 @@ public class HorizontalLayoutManager extends RecyclerView.LayoutManager {
      */
     private void fill(RecyclerView.Recycler recycler, RecyclerView.State state) {
         int leftOffset = getPaddingLeft();
-        if (mHorizontalOffset > 0) {
-            //这是notify 进来 TODO
+        if (mHorizontalOffset != 0) {
+            //这是notify 进来
 
         } else {
             //这是初始化
