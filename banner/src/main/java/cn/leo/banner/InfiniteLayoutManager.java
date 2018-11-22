@@ -1,6 +1,7 @@
 package cn.leo.banner;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 
 /**
@@ -49,70 +50,73 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
         }
 
         //初始化时调用 填充childView
-        fill(recycler, state);
+        layout(recycler, state);
     }
 
     /**
      * 填充view 方法，需要支持 notify
      */
-    private void fill(RecyclerView.Recycler recycler, RecyclerView.State state) {
-
-        if (mHorizontalOffset > 0) {
-            //这是notify进来
-
-        } else {
-            int leftOffset;
-            //这是初始化
-            //onLayoutChildren方法在RecyclerView 初始化时 会执行两遍,所以要把第一遍填充的轻回收
-            detachAndScrapAttachedViews(recycler);
-            int index = mFirstVisiblePosition;
-            //第一个条目居中
-            View firstView = recycler.getViewForPosition(index % state.getItemCount());
-            addView(firstView);
-            measureChildWithMargins(firstView, 0, 0);
-            int firstWidth = getDecoratedMeasuredWidth(firstView);
-            leftOffset = getWidth() / 2 - firstWidth / 2;
-            int temLeft = leftOffset;
-            mHorizontalOffset = leftOffset - getPaddingLeft();
-            layoutDecoratedWithMargins(firstView,
+    private void layout(RecyclerView.Recycler recycler, RecyclerView.State state) {
+        int leftOffset;
+        //这是初始化
+        if (mHorizontalOffset != 0) {
+            return;
+        }
+        //onLayoutChildren方法在RecyclerView 初始化时 会执行两遍,所以要把第一遍填充的轻回收
+        detachAndScrapAttachedViews(recycler);
+        int index = mFirstVisiblePosition;
+        //第一个条目居中
+        View firstView = recycler.getViewForPosition(fixPosition(index));
+        addView(firstView);
+        measureChildWithMargins(firstView, 0, 0);
+        int firstWidth = getDecoratedMeasuredWidth(firstView);
+        leftOffset = getWidth() / 2 - firstWidth / 2;
+        int temLeft = leftOffset;
+        mHorizontalOffset = leftOffset - getPaddingLeft();
+        layoutDecoratedWithMargins(firstView,
+                leftOffset,
+                getPaddingTop(),
+                leftOffset + firstWidth,
+                getPaddingTop() + getDecoratedMeasuredHeight(firstView));
+        leftOffset += getDecoratedMeasurementHorizontal(firstView);
+        index++;
+        //往右排列
+        while (leftOffset < getHorizontalSpace()) {
+            View view = recycler.getViewForPosition(fixPosition(index));
+            addView(view);
+            measureChildWithMargins(view, 0, 0);
+            int childWidth = getDecoratedMeasuredWidth(view);
+            layoutDecoratedWithMargins(view,
                     leftOffset,
                     getPaddingTop(),
-                    leftOffset + firstWidth,
-                    getPaddingTop() + getDecoratedMeasuredHeight(firstView));
-            leftOffset += getDecoratedMeasurementHorizontal(firstView);
+                    leftOffset + childWidth,
+                    getPaddingTop() + getDecoratedMeasuredHeight(view));
+            int viewWidth = getDecoratedMeasurementHorizontal(view);
+            leftOffset += viewWidth;
             index++;
-            //往右排列
-            while (leftOffset < getHorizontalSpace()) {
-                View view = recycler.getViewForPosition(index % state.getItemCount());
-                addView(view);
-                measureChildWithMargins(view, 0, 0);
-                int childWidth = getDecoratedMeasuredWidth(view);
-                layoutDecoratedWithMargins(view,
-                        leftOffset,
-                        getPaddingTop(),
-                        leftOffset + childWidth,
-                        getPaddingTop() + getDecoratedMeasuredHeight(view));
-                leftOffset += getDecoratedMeasurementHorizontal(view);
-                index++;
-            }
-            mLastVisiblePosition = index - 1;
-            //往左排列
-            index = getItemCount() - 1;
-            while (temLeft > getPaddingLeft()) {
-                mFirstVisiblePosition--;
-                View view = recycler.getViewForPosition(index % state.getItemCount());
-                addView(view, 0);
-                measureChildWithMargins(view, 0, 0);
-                int childWidth = getDecoratedMeasuredWidth(view);
-                layoutDecoratedWithMargins(view,
-                        temLeft - childWidth,
-                        getPaddingTop(),
-                        temLeft,
-                        getPaddingTop() + getDecoratedMeasuredHeight(view));
-                temLeft -= getDecoratedMeasurementHorizontal(view);
-                index--;
+            if (viewWidth == 0) {
+                throw new IllegalArgumentException("item layout width can not support wrap_content!");
             }
         }
+        mLastVisiblePosition = index - 1;
+        //往左排列
+        index = -1;
+        while (temLeft > getPaddingLeft()) {
+            View view = recycler.getViewForPosition(fixPosition(index));
+            addView(view, 0);
+            measureChildWithMargins(view, 0, 0);
+            int childWidth = getDecoratedMeasuredWidth(view);
+            layoutDecoratedWithMargins(view,
+                    temLeft - childWidth,
+                    getPaddingTop(),
+                    temLeft,
+                    getPaddingTop() + getDecoratedMeasuredHeight(view));
+            temLeft -= getDecoratedMeasurementHorizontal(view);
+            index--;
+        }
+        mFirstVisiblePosition = index + 1;
+        Log.e("1---", "layout:first-- " + mFirstVisiblePosition);
+        Log.e("1---", "layout:last -- " + mLastVisiblePosition);
     }
 
 
@@ -172,20 +176,19 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
             //左滑
             //获取当前显示的最后一个view
             View child = getChildAt(getChildCount() - 1);
-            int left = getDecoratedLeft(child);
-            int width = getDecoratedMeasuredWidth(child);
             //找RecyclerView要一个新view（判断现在显示的最后一个view是不是adapter的最后一个）
             if (getDecoratedRight(child) - dx < getWidth() - getPaddingRight()) {
+                int left = getDecoratedLeft(child);
+                int width = getDecoratedMeasuredWidth(child);
                 int position = ++mLastVisiblePosition;
-                while (position < 0) {
-                    position += state.getItemCount();
-                }
-                View view = recycler.getViewForPosition(position % state.getItemCount());
+                View view = recycler.getViewForPosition(fixPosition(position));
                 addView(view);
                 measureChildWithMargins(view, 0, 0);
                 layoutDecoratedWithMargins(view, left + width, getPaddingTop(),
                         left + width + getDecoratedMeasuredWidth(view),
                         getPaddingTop() + getDecoratedMeasuredHeight(view));
+                Log.e("2---", "layout:first-- " + mFirstVisiblePosition);
+                Log.e("2---", "layout:last -- " + mLastVisiblePosition);
             }
         } else {
             //右滑
@@ -197,19 +200,26 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
             if (leftOffset > 0) {
                 //左边漏空了，添加新的view，先判断前面是否还有view
                 int position = --mFirstVisiblePosition;
-                while (position < 0) {
-                    position += state.getItemCount();
-                }
-                View view = recycler.getViewForPosition(position % state.getItemCount());
+                View view = recycler.getViewForPosition(fixPosition(position));
                 //添加在左边
                 addView(view, 0);
                 measureChildWithMargins(view, 0, 0);
                 layoutDecoratedWithMargins(view, left - getDecoratedMeasuredWidth(view),
                         getPaddingTop(), left, getPaddingTop() + getDecoratedMeasuredHeight(view));
+                Log.e("3---", "layout:first-- " + mFirstVisiblePosition);
+                Log.e("3---", "layout:last -- " + mLastVisiblePosition);
             }
 
         }
         return dx;
+    }
+
+    /**
+     * 修正越界的索引
+     */
+    private int fixPosition(int position) {
+        int itemCount = getItemCount();
+        return (position % itemCount + itemCount) % itemCount;
     }
 
     /**

@@ -1,4 +1,4 @@
-package cn.leo.banner;
+package cn.leo.banner.test;
 
 import android.support.v7.widget.helper.ItemTouchHelper;
 

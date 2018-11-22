@@ -12,9 +12,9 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.leo.banner.AnimationDecoration;
 import cn.leo.banner.InfiniteLayoutManager;
-import cn.leo.banner.LeoBanner;
+import cn.leo.banner.InvertedScaleDecoration;
+import cn.leo.banner.test.LeoBanner;
 
 /**
  * @author Leo
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         //无限循环
         mRecyclerView.setLayoutManager(new InfiniteLayoutManager());
         //滑动放大缩小动画
-        mRecyclerView.addItemDecoration(new AnimationDecoration());
+        mRecyclerView.addItemDecoration(new InvertedScaleDecoration());
         //自动居中
         new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
 

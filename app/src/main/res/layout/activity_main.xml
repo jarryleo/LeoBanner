@@ -10,12 +10,13 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/rvTest"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="250dp"
+        android:background="@android:color/black"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
-    <cn.leo.banner.LeoBanner
+    <cn.leo.banner.test.LeoBanner
         android:id="@+id/banner"
         android:layout_width="410dp"
         android:layout_height="200dp"
@@ -23,12 +24,11 @@
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent">
 
-    </cn.leo.banner.LeoBanner>
+    </cn.leo.banner.test.LeoBanner>
 
-    <cn.leo.banner.RhombusImageView
+    <cn.leo.banner.test.RhombusImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@mipmap/eee"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"/>
 

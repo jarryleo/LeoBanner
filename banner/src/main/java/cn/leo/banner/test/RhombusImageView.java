@@ -1,4 +1,4 @@
-package cn.leo.banner;
+package cn.leo.banner.test;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

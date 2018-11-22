@@ -8,7 +8,7 @@ import android.view.View;
  * @author : Jarry Leo
  * @date : 2018/11/19 16:27
  */
-public class AnimationDecoration extends RecyclerView.ItemDecoration {
+public class ScaleDecoration extends RecyclerView.ItemDecoration {
 
     /**
      * RecyclerView 的每次滚动都会调用，适合做滑动动画

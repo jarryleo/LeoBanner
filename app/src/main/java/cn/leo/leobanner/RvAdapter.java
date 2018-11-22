@@ -11,6 +11,7 @@ import android.view.ViewGroup;
  * @date : 2018/11/16 11:23
  */
 public class RvAdapter extends RecyclerView.Adapter<RvHolder> {
+    int[] mm = {R.mipmap.mm01, R.mipmap.mm02, R.mipmap.mm03, R.mipmap.mm04, R.mipmap.mm05};
 
     @NonNull
     @Override
@@ -21,11 +22,13 @@ public class RvAdapter extends RecyclerView.Adapter<RvHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull RvHolder holder, int position) {
-        holder.setIdText(position);
+        holder.setIdText(position + 1 + "/" + getItemCount());
+        holder.setImage(mm[position]);
+        System.out.println("加载图片" + position);
     }
 
     @Override
     public int getItemCount() {
-        return 5;
+        return mm.length;
     }
 }
