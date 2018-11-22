@@ -17,6 +17,10 @@ import android.view.View;
  * @date : 2018/11/19 16:27
  */
 public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
+    /**
+     * VIEW 最小缩放倍数
+     */
+    private static float MIN_SCALE = 0.9f;
 
     /**
      * RecyclerView 的每次滚动都会调用，适合做滑动动画
@@ -33,7 +37,7 @@ public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
             int width = layoutManager.getDecoratedMeasuredWidth(child);
             int center = left + width / 2;
             int distance = Math.abs(center - centerX);
-            float scale = 0.9f + 0.1f * (1f - distance * 1f / centerX);
+            float scale = MIN_SCALE + (1 - MIN_SCALE) * (1f - distance * 1f / centerX);
             child.setScaleX(scale);
             child.setScaleY(scale);
 

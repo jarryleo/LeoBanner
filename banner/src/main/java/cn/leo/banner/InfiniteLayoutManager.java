@@ -1,7 +1,6 @@
 package cn.leo.banner;
 
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 
 /**
@@ -115,8 +114,6 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
             index--;
         }
         mFirstVisiblePosition = index + 1;
-        Log.e("1---", "layout:first-- " + mFirstVisiblePosition);
-        Log.e("1---", "layout:last -- " + mLastVisiblePosition);
     }
 
 
@@ -187,8 +184,6 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
                 layoutDecoratedWithMargins(view, left + width, getPaddingTop(),
                         left + width + getDecoratedMeasuredWidth(view),
                         getPaddingTop() + getDecoratedMeasuredHeight(view));
-                Log.e("2---", "layout:first-- " + mFirstVisiblePosition);
-                Log.e("2---", "layout:last -- " + mLastVisiblePosition);
             }
         } else {
             //右滑
@@ -206,8 +201,6 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
                 measureChildWithMargins(view, 0, 0);
                 layoutDecoratedWithMargins(view, left - getDecoratedMeasuredWidth(view),
                         getPaddingTop(), left, getPaddingTop() + getDecoratedMeasuredHeight(view));
-                Log.e("3---", "layout:first-- " + mFirstVisiblePosition);
-                Log.e("3---", "layout:last -- " + mLastVisiblePosition);
             }
 
         }
