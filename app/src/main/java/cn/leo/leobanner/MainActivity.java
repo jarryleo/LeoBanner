@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.leo.banner.InfiniteLayoutManager;
+import cn.leo.banner.InvertedScaleDecoration;
 import cn.leo.banner.RotateScaleDecoration;
 import cn.leo.banner.SimpeRotateScaleDecoration;
 import cn.leo.banner.test.LeoBanner;
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         //无限循环
         mRecyclerView.setLayoutManager(new InfiniteLayoutManager());
         //滑动动画
-        mRecyclerView.addItemDecoration(new RotateScaleDecoration());
+        mRecyclerView.addItemDecoration(new InvertedScaleDecoration());
         //自动居中
         new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
 

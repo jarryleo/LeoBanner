@@ -69,10 +69,6 @@ public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
 
         //1.倒立图
         Matrix matrix = new Matrix();
-        camera.save();
-        camera.rotateY(-30);
-        camera.getMatrix(matrix);
-        camera.restore();
         //以X轴向下翻转
         int width = rect.width();
         int height = rect.height();
