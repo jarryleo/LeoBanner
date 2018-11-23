@@ -96,12 +96,6 @@ public class InvertedScaleDecoration extends RecyclerView.ItemDecoration {
     private Bitmap convertViewToBitmap(View view) {
         view.destroyDrawingCache();
         view.setDrawingCacheEnabled(true);
-        Bitmap cacheBitmap = view.getDrawingCache(true);
-        if (cacheBitmap == null) {
-            return null;
-        }
-        Bitmap bitmap = Bitmap.createBitmap(cacheBitmap);
-        cacheBitmap.recycle();
-        return bitmap;
+        return view.getDrawingCache(true);
     }
 }
