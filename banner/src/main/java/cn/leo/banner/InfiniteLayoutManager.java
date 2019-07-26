@@ -1,13 +1,16 @@
 package cn.leo.banner;
 
+import android.graphics.PointF;
+import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
+import android.view.MotionEvent;
 import android.view.View;
 
 /**
  * @author : Jarry Leo
  * @date : 2018/11/15 15:36
  */
-public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
+public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements RecyclerView.SmoothScroller.ScrollVectorProvider {
     /**
      * 现在第一个可见的view的在所有条目中的索引
      */
@@ -44,10 +47,6 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
         }
         //state.isPreLayout()是支持动画的（重写supportsPredictiveItemAnimations()方法后必定执行2次，
         // 一次PreLayout，一次真实layout，根据2次位置执行动画）
-        if (getChildCount() == 0 && state.isPreLayout()) {
-            return;
-        }
-
         //初始化时调用 填充childView
         layout(recycler, state);
     }
@@ -58,9 +57,9 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
     private void layout(RecyclerView.Recycler recycler, RecyclerView.State state) {
         int leftOffset;
         //这是初始化
-        if (mHorizontalOffset != 0) {
+        /*if (mHorizontalOffset != 0) {
             return;
-        }
+        }*/
         //onLayoutChildren方法在RecyclerView 初始化时 会执行两遍,所以要把第一遍填充的轻回收
         detachAndScrapAttachedViews(recycler);
         int index = mFirstVisiblePosition;
@@ -99,7 +98,7 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
         }
         mLastVisiblePosition = index - 1;
         //往左排列
-        index = -1;
+        index = mFirstVisiblePosition - 1;
         while (temLeft > getPaddingLeft()) {
             View view = recycler.getViewForPosition(fixPosition(index));
             addView(view, 0);
@@ -152,15 +151,16 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
             //滑动时进来的
             for (int i = getChildCount() - 1; i >= 0; i--) {
                 View child = getChildAt(i);
-                if (dx > 0) {
+                if (dx >= 0) {
                     //需要回收当前屏幕，左越界的View
-                    if (getDecoratedRight(child) - dx < getPaddingLeft()) {
+                    if (getDecoratedRight(child) - dx <= getPaddingLeft()) {
                         removeAndRecycleView(child, recycler);
                         mFirstVisiblePosition++;
                     }
-                } else if (dx < 0) {
+                }
+                if (dx <= 0) {
                     //回收当前屏幕，右越界的View
-                    if (getDecoratedLeft(child) - dx > getWidth() - getPaddingRight()) {
+                    if (getDecoratedLeft(child) - dx >= getWidth() - getPaddingRight()) {
                         removeAndRecycleView(child, recycler);
                         mLastVisiblePosition--;
                     }
@@ -275,4 +275,129 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager {
         return getWidth() - getPaddingLeft() - getPaddingRight();
     }
 
+
+    @Override
+    public void scrollToPosition(int position) {
+        mFirstVisiblePosition = position;
+        requestLayout();
+    }
+
+    @Override
+    public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
+        LinearSmoothScroller linearSmoothScroller =
+                new LinearSmoothScroller(recyclerView.getContext());
+        linearSmoothScroller.setTargetPosition(position);
+        startSmoothScroll(linearSmoothScroller);
+    }
+
+    @Override
+    public PointF computeScrollVectorForPosition(int targetPosition) {
+        if (getChildCount() == 0) {
+            return null;
+        }
+        final int direction = targetPosition < mFirstVisiblePosition ? -1 : 1;
+        return new PointF(mInterval > 0 ? 1 : direction, 0);
+    }
+
+    @Override
+    public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
+        removeAllViews();
+        mHorizontalOffset = 0;
+        mFirstVisiblePosition = 0;
+        mLastVisiblePosition = 0;
+    }
+
+    public int getFirstVisiblePosition() {
+        return mFirstVisiblePosition;
+    }
+
+    public int getLastVisiblePosition() {
+        return mLastVisiblePosition;
+    }
+
+    public int getHorizontalOffset() {
+        return mHorizontalOffset;
+    }
+
+
+    //以下自动滚动部分
+
+
+    public InfiniteLayoutManager() {
+    }
+
+    public InfiniteLayoutManager(int interval) {
+        mInterval = interval;
+    }
+
+
+    private RecyclerView mRecyclerView;
+    private int mInterval;
+
+    private void next() {
+        if (mRecyclerView == null || mInterval <= 0) {
+            return;
+        }
+        int position = fixPosition(mFirstVisiblePosition + 1);
+        mRecyclerView.removeCallbacks(mRunnable);
+        mRecyclerView.smoothScrollToPosition(position);
+        mRecyclerView.postDelayed(mRunnable, mInterval);
+    }
+
+    private void stop() {
+        if (mRecyclerView != null) {
+            mRecyclerView.removeCallbacks(mRunnable);
+        }
+    }
+
+    private void run() {
+        if (mRecyclerView != null && mInterval > 0) {
+            mRecyclerView.postDelayed(mRunnable, mInterval);
+        }
+    }
+
+    private Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            next();
+        }
+    };
+
+    @Override
+    public void onAttachedToWindow(RecyclerView view) {
+        super.onAttachedToWindow(view);
+        mRecyclerView = view;
+        if (mInterval > 0) {
+            mRecyclerView.postDelayed(mRunnable, mInterval);
+            mRecyclerView.addOnItemTouchListener(mSimpleOnItemTouchListener);
+        }
+    }
+
+    @Override
+    public void onDetachedFromWindow(RecyclerView view, RecyclerView.Recycler recycler) {
+        removeCallbacks(mRunnable);
+        super.onDetachedFromWindow(view, recycler);
+        if (mRecyclerView != null) {
+            mRecyclerView.removeOnItemTouchListener(mSimpleOnItemTouchListener);
+            mRecyclerView = null;
+        }
+    }
+
+    //触摸暂停
+
+    private RecyclerView.SimpleOnItemTouchListener mSimpleOnItemTouchListener =
+            new RecyclerView.SimpleOnItemTouchListener() {
+
+                @Override
+                public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
+                    if (e.getAction() == MotionEvent.ACTION_DOWN) {
+                        stop();
+                    }
+                    if (e.getAction() == MotionEvent.ACTION_UP ||
+                            e.getAction() == MotionEvent.ACTION_CANCEL) {
+                        run();
+                    }
+                    return super.onInterceptTouchEvent(rv, e);
+                }
+            };
 }
