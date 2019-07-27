@@ -2,7 +2,9 @@ package cn.leo.banner;
 
 import android.graphics.PointF;
 import android.support.v7.widget.LinearSmoothScroller;
+import android.support.v7.widget.PagerSnapHelper;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -10,7 +12,10 @@ import android.view.View;
  * @author : Jarry Leo
  * @date : 2018/11/15 15:36
  */
-public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements RecyclerView.SmoothScroller.ScrollVectorProvider {
+public class InfiniteLayoutManager
+        extends RecyclerView.LayoutManager
+        implements RecyclerView.SmoothScroller.ScrollVectorProvider {
+    private static final String TAG = "InfiniteLayoutManager";
     /**
      * 现在第一个可见的view的在所有条目中的索引
      */
@@ -47,6 +52,9 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
         }
         //state.isPreLayout()是支持动画的（重写supportsPredictiveItemAnimations()方法后必定执行2次，
         // 一次PreLayout，一次真实layout，根据2次位置执行动画）
+        if (state.isPreLayout() || mHorizontalOffset > 0) {
+            return;
+        }
         //初始化时调用 填充childView
         layout(recycler, state);
     }
@@ -57,9 +65,6 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
     private void layout(RecyclerView.Recycler recycler, RecyclerView.State state) {
         int leftOffset;
         //这是初始化
-        /*if (mHorizontalOffset != 0) {
-            return;
-        }*/
         //onLayoutChildren方法在RecyclerView 初始化时 会执行两遍,所以要把第一遍填充的轻回收
         detachAndScrapAttachedViews(recycler);
         int index = mFirstVisiblePosition;
@@ -93,7 +98,8 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
             leftOffset += viewWidth;
             index++;
             if (viewWidth == 0) {
-                throw new IllegalArgumentException("item layout width can not support wrap_content!");
+                throw new IllegalArgumentException(
+                        "item layout width can not support wrap_content!");
             }
         }
         mLastVisiblePosition = index - 1;
@@ -123,15 +129,16 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
      * 而且返回值还会被RecyclerView用于计算fling效果。
      */
     @Override
-    public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler, RecyclerView.State state) {
+    public int scrollHorizontallyBy(int dx,
+                                    RecyclerView.Recycler recycler,
+                                    RecyclerView.State state) {
         //位移0、没有子View 当然不移动
         if (dx == 0 || getChildCount() == 0) {
             return 0;
         }
         //实际滑动的距离， 可能会在边界处被修复
-        int realOffset = dx;
         //先填充，再位移。
-        realOffset = fill(recycler, state, realOffset);
+        int realOffset = fill(recycler, state, dx);
         //累加实际滑动距离
         mHorizontalOffset += realOffset;
         //移动所有展示的子条目 , 但是不会自动回收或者出现新的条目，要自己处理
@@ -146,28 +153,6 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
      * @return 实际距离
      */
     private int fill(RecyclerView.Recycler recycler, RecyclerView.State state, int dx) {
-        //先回收越界view
-        if (getChildCount() > 0) {
-            //滑动时进来的
-            for (int i = getChildCount() - 1; i >= 0; i--) {
-                View child = getChildAt(i);
-                if (dx >= 0) {
-                    //需要回收当前屏幕，左越界的View
-                    if (getDecoratedRight(child) - dx <= getPaddingLeft()) {
-                        removeAndRecycleView(child, recycler);
-                        mFirstVisiblePosition++;
-                    }
-                }
-                if (dx <= 0) {
-                    //回收当前屏幕，右越界的View
-                    if (getDecoratedLeft(child) - dx >= getWidth() - getPaddingRight()) {
-                        removeAndRecycleView(child, recycler);
-                        mLastVisiblePosition--;
-                    }
-                }
-            }
-        }
-
         //添加新的view,分左右方向添加，左滑添加右边，右滑添加左边
         if (dx > 0) {
             //左滑
@@ -177,8 +162,8 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
             if (getDecoratedRight(child) - dx < getWidth() - getPaddingRight()) {
                 int left = getDecoratedLeft(child);
                 int width = getDecoratedMeasuredWidth(child);
-                int position = ++mLastVisiblePosition;
-                View view = recycler.getViewForPosition(fixPosition(position));
+                mLastVisiblePosition = fixPosition(++mLastVisiblePosition);
+                View view = recycler.getViewForPosition(mLastVisiblePosition);
                 addView(view);
                 measureChildWithMargins(view, 0, 0);
                 layoutDecoratedWithMargins(view, left + width, getPaddingTop(),
@@ -194,15 +179,37 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
             int leftOffset = left - getPaddingLeft() - dx;
             if (leftOffset > 0) {
                 //左边漏空了，添加新的view，先判断前面是否还有view
-                int position = --mFirstVisiblePosition;
-                View view = recycler.getViewForPosition(fixPosition(position));
+                mFirstVisiblePosition = fixPosition(--mFirstVisiblePosition);
+                View view = recycler.getViewForPosition(mFirstVisiblePosition);
                 //添加在左边
                 addView(view, 0);
                 measureChildWithMargins(view, 0, 0);
                 layoutDecoratedWithMargins(view, left - getDecoratedMeasuredWidth(view),
-                        getPaddingTop(), left, getPaddingTop() + getDecoratedMeasuredHeight(view));
+                        getPaddingTop(), left,
+                        getPaddingTop() + getDecoratedMeasuredHeight(view));
             }
 
+        }
+        //回收越界view
+        if (getChildCount() > 0) {
+            //滑动时进来的
+            for (int i = getChildCount() - 1; i >= 0; i--) {
+                View child = getChildAt(i);
+                if (dx >= 0) {
+                    //需要回收当前屏幕，左越界的View
+                    if (getDecoratedRight(child) - dx <= getPaddingLeft()) {
+                        removeAndRecycleView(child, recycler);
+                        mFirstVisiblePosition = fixPosition(++mFirstVisiblePosition);
+                    }
+                }
+                if (dx <= 0) {
+                    //回收当前屏幕，右越界的View
+                    if (getDecoratedLeft(child) - dx >= getWidth() - getPaddingRight()) {
+                        removeAndRecycleView(child, recycler);
+                        mLastVisiblePosition = fixPosition(--mLastVisiblePosition);
+                    }
+                }
+            }
         }
         return dx;
     }
@@ -283,9 +290,9 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
     }
 
     @Override
-    public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
-        LinearSmoothScroller linearSmoothScroller =
-                new LinearSmoothScroller(recyclerView.getContext());
+    public void smoothScrollToPosition(RecyclerView recyclerView,
+                                       RecyclerView.State state, int position) {
+        LinearSmoothScroller linearSmoothScroller = createSnapScroller();
         linearSmoothScroller.setTargetPosition(position);
         startSmoothScroll(linearSmoothScroller);
     }
@@ -295,8 +302,7 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
         if (getChildCount() == 0) {
             return null;
         }
-        final int direction = targetPosition < mFirstVisiblePosition ? -1 : 1;
-        return new PointF(mInterval > 0 ? 1 : direction, 0);
+        return new PointF(1, 0);
     }
 
     @Override
@@ -338,9 +344,12 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
         if (mRecyclerView == null || mInterval <= 0) {
             return;
         }
-        int position = fixPosition(mFirstVisiblePosition + 1);
         mRecyclerView.removeCallbacks(mRunnable);
-        mRecyclerView.smoothScrollToPosition(position);
+        int lastPosition = mLastVisiblePosition < mFirstVisiblePosition ?
+                mLastVisiblePosition + getItemCount() : mLastVisiblePosition;
+        int position = (lastPosition - mFirstVisiblePosition + 1) / 2
+                + mFirstVisiblePosition + 1;
+        mRecyclerView.smoothScrollToPosition(fixPosition(position));
         mRecyclerView.postDelayed(mRunnable, mInterval);
     }
 
@@ -370,6 +379,7 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
         if (mInterval > 0) {
             mRecyclerView.postDelayed(mRunnable, mInterval);
             mRecyclerView.addOnItemTouchListener(mSimpleOnItemTouchListener);
+            mInfiniteLayoutSnapHelper.attachToRecyclerView(mRecyclerView);
         }
     }
 
@@ -400,4 +410,77 @@ public class InfiniteLayoutManager extends RecyclerView.LayoutManager implements
                     return super.onInterceptTouchEvent(rv, e);
                 }
             };
+
+    private PagerSnapHelper mInfiniteLayoutSnapHelper = new PagerSnapHelper() {
+        @Override
+        public int findTargetSnapPosition(RecyclerView.LayoutManager layoutManager,
+                                          int velocityX, int velocityY) {
+            if (!(layoutManager instanceof RecyclerView.SmoothScroller.ScrollVectorProvider)) {
+                return RecyclerView.NO_POSITION;
+            }
+
+            final int itemCount = layoutManager.getItemCount();
+            if (itemCount == 0) {
+                return RecyclerView.NO_POSITION;
+            }
+
+            final View currentView = findSnapView(layoutManager);
+            if (currentView == null) {
+                return RecyclerView.NO_POSITION;
+            }
+
+            final int currentPosition = layoutManager.getPosition(currentView);
+            if (currentPosition == RecyclerView.NO_POSITION) {
+                return RecyclerView.NO_POSITION;
+            }
+            RecyclerView.SmoothScroller.ScrollVectorProvider vectorProvider =
+                    (RecyclerView.SmoothScroller.ScrollVectorProvider) layoutManager;
+            PointF vectorForEnd = vectorProvider.
+                    computeScrollVectorForPosition(itemCount - 1);
+            if (vectorForEnd == null) {
+                return RecyclerView.NO_POSITION;
+            }
+            int hDeltaJump = velocityX > 0 ? 1 : -1;
+            int targetPos = currentPosition + hDeltaJump;
+            return fixPosition(targetPos);
+        }
+    };
+
+    protected LinearSmoothScroller createSnapScroller() {
+        return new LinearSmoothScroller(mRecyclerView.getContext()) {
+            private static final float MILLISECONDS_PER_INCH = 25f;
+
+            @Override
+            protected void onTargetFound(View targetView, RecyclerView.State state, Action action) {
+                if (mRecyclerView == null) {
+                    // The associated RecyclerView has been removed so there is no action to take.
+                    return;
+                }
+                int[] snapDistances = mInfiniteLayoutSnapHelper.
+                        calculateDistanceToFinalSnap(mRecyclerView.getLayoutManager(),
+                                targetView);
+                final int dx = snapDistances[0];
+                final int dy = snapDistances[1];
+                final int time = calculateTimeForDeceleration(Math.max(Math.abs(dx), Math.abs(dy)));
+                if (time > 0) {
+                    action.update(dx, dy, time, mDecelerateInterpolator);
+                }
+            }
+
+            @Override
+            protected float calculateSpeedPerPixel(DisplayMetrics displayMetrics) {
+                return MILLISECONDS_PER_INCH / displayMetrics.densityDpi;
+            }
+
+            @Override
+            protected int calculateTimeForDeceleration(int dx) {
+                // we want to cover same area with the linear interpolator for the first 10% of the
+                // interpolation. After that, deceleration will take control.
+                // area under curve (1-(1-x)^2) can be calculated as (1 - x/3) * x * x
+                // which gives 0.100028 when x = .3356
+                // this is why we divide linear scrolling time with .3356
+                return (int) Math.ceil(calculateTimeForScrolling(dx) / .3356);
+            }
+        };
+    }
 }
