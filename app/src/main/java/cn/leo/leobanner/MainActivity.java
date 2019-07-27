@@ -3,7 +3,6 @@ package cn.leo.leobanner;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearSnapHelper;
 import android.support.v7.widget.RecyclerView;
 import android.widget.ImageView;
 
@@ -12,10 +11,9 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.List;
 
+import cn.leo.banner.IndicatorDecoration;
 import cn.leo.banner.InfiniteLayoutManager;
 import cn.leo.banner.InvertedScaleDecoration;
-import cn.leo.banner.RotateScaleDecoration;
-import cn.leo.banner.SimpeRotateScaleDecoration;
 import cn.leo.banner.test.LeoBanner;
 
 /**
@@ -33,11 +31,13 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView = findViewById(R.id.rvTest);
         mRecyclerView.setAdapter(new RvAdapter());
         //无限循环
-        mRecyclerView.setLayoutManager(new InfiniteLayoutManager());
+        mRecyclerView.setLayoutManager(new InfiniteLayoutManager(5000));
         //滑动动画
         mRecyclerView.addItemDecoration(new InvertedScaleDecoration());
+        //指示器
+        mRecyclerView.addItemDecoration(new IndicatorDecoration());
         //自动居中
-        new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
+        //new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
 
         DefaultItemAnimator defaultItemAnimator = new DefaultItemAnimator();
         defaultItemAnimator.setAddDuration(1000);
