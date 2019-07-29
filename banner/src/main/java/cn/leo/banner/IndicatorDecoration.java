@@ -5,8 +5,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.support.annotation.IntDef;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * @author : Jarry Leo
@@ -15,14 +19,27 @@ import android.view.View;
 public class IndicatorDecoration extends RecyclerView.ItemDecoration {
     /**
      * 待完善：
-     * 1。指示器选中和非选中大小可设置
-     * 2。指示器选中和非选中颜色可设置
-     * 3。指示器位置上下左右和四个角位置可设置
-     * 4。指示器设置支持drawable文件和图片
+     * 指示器设置支持drawable文件和图片
      */
-    private int mSize = dip2px(8);
+    public static final int ALIGN_LEFT = 1;
+    public static final int ALIGN_RIGHT = 1 << 1;
+    public static final int ALIGN_TOP = 1 << 2;
+    public static final int ALIGN_BOTTOM = 1 << 3;
+    @Align
+    private int mAlign = ALIGN_BOTTOM;
+
+    @IntDef(value = {ALIGN_LEFT, ALIGN_RIGHT, ALIGN_TOP, ALIGN_BOTTOM}, flag = true)
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Align {
+    }
+
+    private int mSelectedSize = dip2px(7);
+    private int mUnselectedSize = dip2px(7);
+    private int mSelectedColor = Color.RED;
+    private int mUnselectedColor = Color.WHITE;
     private int mSpace = dip2px(6);
-    private int mPadding = dip2px(16);
+    private int mVerticalPadding = dip2px(16);
+    private int mHorizontalPadding = dip2px(16);
     private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     /**
@@ -51,22 +68,75 @@ public class IndicatorDecoration extends RecyclerView.ItemDecoration {
                 break;
             }
         }
-        //绘制指示器
-        int indicatorWidth = mSize * itemCount + mSpace * (itemCount - 1);
+        //指示器总体宽度
+        int indicatorWidth = mUnselectedSize * itemCount +
+                mSpace * (itemCount - 1) +
+                mSelectedSize - mUnselectedSize;
+        //指示器位置
         int indicatorLeft = (width - indicatorWidth) / 2;
-        int indicatorTop = height - mSize - mPadding;
+        if ((mAlign & ALIGN_LEFT) == ALIGN_LEFT) {
+            indicatorLeft = mVerticalPadding;
+        }
+        if ((mAlign & ALIGN_RIGHT) == ALIGN_RIGHT) {
+            indicatorLeft = width - indicatorWidth - mVerticalPadding;
+        }
+
+        int indicatorTop = (height - mUnselectedSize) / 2;
+        if ((mAlign & ALIGN_TOP) == ALIGN_TOP) {
+            indicatorTop = mHorizontalPadding;
+        }
+        if ((mAlign & ALIGN_BOTTOM) == ALIGN_BOTTOM) {
+            indicatorTop = height - mUnselectedSize - mVerticalPadding;
+        }
+
+        //绘制指示器
         for (int i = 0; i < itemCount; i++) {
+            int r = mUnselectedSize;
             if (centerItemPosition == i) {
                 //选中条目指示器颜色
-                mPaint.setColor(Color.RED);
+                mPaint.setColor(mSelectedColor);
+                r = mSelectedSize;
             } else {
-                mPaint.setColor(Color.WHITE);
+                mPaint.setColor(mUnselectedColor);
             }
-            int left = i * (mSize + mSpace) + indicatorLeft;
-            int cx = left + (mSize / 2);
-            int cy = indicatorTop + (mSize / 2);
-            c.drawCircle(cx, cy, mSize / 2f, mPaint);
+            int left = i * (mUnselectedSize + mSpace) + indicatorLeft;
+
+            int cx = left + (mUnselectedSize / 2);
+            int cy = indicatorTop + (mUnselectedSize / 2);
+            c.drawCircle(cx, cy, r / 2f, mPaint);
         }
+    }
+
+    public void setSelectedSize(int selectedSize) {
+        mSelectedSize = dip2px(selectedSize);
+    }
+
+    public void setUnselectedSize(int unselectedSize) {
+        mUnselectedSize = dip2px(unselectedSize);
+    }
+
+    public void setSelectedColor(int selectedColor) {
+        mSelectedColor = selectedColor;
+    }
+
+    public void setUnselectedColor(int unselectedColor) {
+        mUnselectedColor = unselectedColor;
+    }
+
+    public void setSpace(int space) {
+        mSpace = dip2px(space);
+    }
+
+    public void setVerticalPadding(int verticalPadding) {
+        mVerticalPadding = dip2px(verticalPadding);
+    }
+
+    public void setHorizontalPadding(int horizontalPadding) {
+        mHorizontalPadding = dip2px(horizontalPadding);
+    }
+
+    public void setAlign(@Align int align) {
+        mAlign = align;
     }
 
     private int dip2px(float dpValue) {
