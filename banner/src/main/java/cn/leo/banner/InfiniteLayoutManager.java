@@ -1,6 +1,9 @@
 package cn.leo.banner;
 
+import android.content.Context;
 import android.graphics.PointF;
+import android.graphics.Rect;
+import android.os.PowerManager;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.PagerSnapHelper;
 import android.support.v7.widget.RecyclerView;
@@ -386,12 +389,44 @@ public class InfiniteLayoutManager
             return;
         }
         mRecyclerView.removeCallbacks(mRunnable);
-        int lastPosition = mLastVisiblePosition < mFirstVisiblePosition ?
-                mLastVisiblePosition + getItemCount() : mLastVisiblePosition;
-        int position = (lastPosition - mFirstVisiblePosition + 1) / 2
-                + mFirstVisiblePosition + 1;
-        mRecyclerView.smoothScrollToPosition(fixPosition(position));
+        if (isVisible()) {
+            int lastPosition = mLastVisiblePosition < mFirstVisiblePosition ?
+                    mLastVisiblePosition + getItemCount() : mLastVisiblePosition;
+            int position = (lastPosition - mFirstVisiblePosition + 1) / 2
+                    + mFirstVisiblePosition + 1;
+            mRecyclerView.smoothScrollToPosition(fixPosition(position));
+        }
         mRecyclerView.postDelayed(mRunnable, mInterval);
+    }
+
+    private boolean isVisible() {
+        if (!mRecyclerView.isShown()) {
+            return false;
+        }
+        PowerManager pm = (PowerManager) mRecyclerView.getContext()
+                .getSystemService(Context.POWER_SERVICE);
+        if (pm != null) {
+            boolean isScreenOn;
+            if (android.os.Build.VERSION.SDK_INT >=
+                    android.os.Build.VERSION_CODES.KITKAT_WATCH) {
+                isScreenOn = pm.isInteractive();
+            } else {
+                isScreenOn = pm.isScreenOn();
+            }
+            if (!isScreenOn) {
+                return false;
+            }
+        }
+        Rect rect = new Rect();
+        boolean visibility = mRecyclerView.getLocalVisibleRect(rect);
+        int visibleArea = rect.width() * rect.height();
+        int area = getWidth() * getHeight();
+        float v = visibleArea * 1f / area;
+        //可见面积小于50%不滚动
+        if (v < 0.5f) {
+            return false;
+        }
+        return visibility;
     }
 
     private void stop() {
