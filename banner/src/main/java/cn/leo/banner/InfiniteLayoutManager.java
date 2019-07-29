@@ -181,7 +181,7 @@ public class InfiniteLayoutManager
     private void recycleLeft(RecyclerView.Recycler recycler, int dx) {
         for (int i = getChildCount() - 1; i >= 0; i--) {
             View child = getChildAt(i);
-            if (getDecoratedRight(child) - dx < getPaddingLeft()) {
+            if (getDecoratedRight(child) - dx <= getPaddingLeft()) {
                 removeAndRecycleView(child, recycler);
                 mFirstVisiblePosition = fixPosition(++mFirstVisiblePosition);
             }
@@ -195,7 +195,7 @@ public class InfiniteLayoutManager
     private void recycleRight(RecyclerView.Recycler recycler, int dx) {
         for (int i = getChildCount() - 1; i >= 0; i--) {
             View child = getChildAt(i);
-            if (getDecoratedLeft(child) - dx > getWidth() - getPaddingRight()) {
+            if (getDecoratedLeft(child) - dx >= getWidth() - getPaddingRight()) {
                 removeAndRecycleView(child, recycler);
                 mLastVisiblePosition = fixPosition(--mLastVisiblePosition);
             }
