@@ -23,13 +23,13 @@ public class ReflectionScaleDecoration extends RecyclerView.ItemDecoration {
      */
     private static float MIN_SCALE = 0.9f;
     private RecyclerView mRecyclerView;
+    private boolean init = false;
 
     /**
      * RecyclerView 的每次滚动都会调用，适合做滑动动画
      */
     @Override
     public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
-
         if (mRecyclerView != parent) {
             mRecyclerView = parent;
             //注册条目更新监听，为了重新生产阴影
@@ -45,9 +45,14 @@ public class ReflectionScaleDecoration extends RecyclerView.ItemDecoration {
                 public void onLayoutChange(View v, int left, int top, int right,
                                            int bottom, int oldLeft, int oldTop,
                                            int oldRight, int oldBottom) {
+                    init = true;
                     mBitmapCache.evictAll();
                 }
             });
+        }
+        if (!init) {
+            //布局完成前不绘制
+            return;
         }
         RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
         //当前显示的所有条目
