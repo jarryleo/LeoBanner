@@ -13,7 +13,7 @@ import java.util.List;
 
 import cn.leo.banner.IndicatorDecoration;
 import cn.leo.banner.InfiniteLayoutManager;
-import cn.leo.banner.InvertedScaleDecoration;
+import cn.leo.banner.ReflectionScaleDecoration;
 import cn.leo.banner.test.LeoBanner;
 
 /**
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         //无限循环
         mRecyclerView.setLayoutManager(new InfiniteLayoutManager(5000));
         //滑动动画
-        mRecyclerView.addItemDecoration(new InvertedScaleDecoration());
+        mRecyclerView.addItemDecoration(new ReflectionScaleDecoration());
         //指示器
         mRecyclerView.addItemDecoration(new IndicatorDecoration());
         //自动居中

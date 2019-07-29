@@ -52,7 +52,10 @@ public class InfiniteLayoutManager
         }
         //state.isPreLayout()是支持动画的（重写supportsPredictiveItemAnimations()方法后必定执行2次，
         // 一次PreLayout，一次真实layout，根据2次位置执行动画）
-        if (state.isPreLayout() || mHorizontalOffset > 0) {
+        if (state.isPreLayout()) {
+            return;
+        }
+        if (mHorizontalOffset > 0) {
             return;
         }
         //初始化时调用 填充childView
@@ -149,69 +152,107 @@ public class InfiniteLayoutManager
     /**
      * 填充新的view，回收越界的view
      *
-     * @param dx 真实距离
+     * @param dx 真实距离 右滑位负 左滑为正
      * @return 实际距离
      */
     private int fill(RecyclerView.Recycler recycler, RecyclerView.State state, int dx) {
         //添加新的view,分左右方向添加，左滑添加右边，右滑添加左边
         if (dx > 0) {
-            //左滑
-            //获取当前显示的最后一个view
-            View child = getChildAt(getChildCount() - 1);
-            //找RecyclerView要一个新view（判断现在显示的最后一个view是不是adapter的最后一个）
-            if (getDecoratedRight(child) - dx < getWidth() - getPaddingRight()) {
-                int left = getDecoratedLeft(child);
-                int width = getDecoratedMeasuredWidth(child);
-                mLastVisiblePosition = fixPosition(++mLastVisiblePosition);
-                View view = recycler.getViewForPosition(mLastVisiblePosition);
-                addView(view);
-                measureChildWithMargins(view, 0, 0);
-                layoutDecoratedWithMargins(view, left + width, getPaddingTop(),
-                        left + width + getDecoratedMeasuredWidth(view),
-                        getPaddingTop() + getDecoratedMeasuredHeight(view));
-            }
+            addRight(recycler, dx);
         } else {
-            //右滑
-            //拿到左边第一个显示的view
-            View firstVisibleView = getChildAt(0);
-            //获取第一个view的left
-            int left = getDecoratedLeft(firstVisibleView);
-            int leftOffset = left - getPaddingLeft() - dx;
-            if (leftOffset > 0) {
-                //左边漏空了，添加新的view，先判断前面是否还有view
-                mFirstVisiblePosition = fixPosition(--mFirstVisiblePosition);
-                View view = recycler.getViewForPosition(mFirstVisiblePosition);
-                //添加在左边
-                addView(view, 0);
-                measureChildWithMargins(view, 0, 0);
-                layoutDecoratedWithMargins(view, left - getDecoratedMeasuredWidth(view),
-                        getPaddingTop(), left,
-                        getPaddingTop() + getDecoratedMeasuredHeight(view));
-            }
-
+            addLeft(recycler, dx);
         }
         //回收越界view
         if (getChildCount() > 0) {
-            //滑动时进来的
-            for (int i = getChildCount() - 1; i >= 0; i--) {
-                View child = getChildAt(i);
-                if (dx >= 0) {
-                    //需要回收当前屏幕，左越界的View
-                    if (getDecoratedRight(child) - dx <= getPaddingLeft()) {
-                        removeAndRecycleView(child, recycler);
-                        mFirstVisiblePosition = fixPosition(++mFirstVisiblePosition);
-                    }
-                }
-                if (dx <= 0) {
-                    //回收当前屏幕，右越界的View
-                    if (getDecoratedLeft(child) - dx >= getWidth() - getPaddingRight()) {
-                        removeAndRecycleView(child, recycler);
-                        mLastVisiblePosition = fixPosition(--mLastVisiblePosition);
-                    }
-                }
+            if (dx >= 0) {
+                recycleLeft(recycler, dx);
+            }
+            if (dx <= 0) {
+                recycleRight(recycler, dx);
             }
         }
         return dx;
+    }
+
+    /**
+     * 根据滑动距离回收越界不显示的view
+     * 如果滑动距离很大，可能会全部回收
+     */
+    private void recycleLeft(RecyclerView.Recycler recycler, int dx) {
+        for (int i = getChildCount() - 1; i >= 0; i--) {
+            View child = getChildAt(i);
+            if (getDecoratedRight(child) - dx < getPaddingLeft()) {
+                removeAndRecycleView(child, recycler);
+                mFirstVisiblePosition = fixPosition(++mFirstVisiblePosition);
+            }
+        }
+    }
+
+    /**
+     * 根据滑动距离回收越界不显示的view
+     * 如果滑动距离很大，可能会全部回收
+     */
+    private void recycleRight(RecyclerView.Recycler recycler, int dx) {
+        for (int i = getChildCount() - 1; i >= 0; i--) {
+            View child = getChildAt(i);
+            if (getDecoratedLeft(child) - dx > getWidth() - getPaddingRight()) {
+                removeAndRecycleView(child, recycler);
+                mLastVisiblePosition = fixPosition(--mLastVisiblePosition);
+            }
+        }
+    }
+
+    /**
+     * 根据滑动距离填补漏出来的空白
+     * 如果滑动距离过大，需要填补多个条目
+     */
+    private void addLeft(RecyclerView.Recycler recycler, int dx) {
+        //拿到左边第一个显示的view
+        View firstVisibleView = getChildAt(0);
+
+        //获取第一个view的left
+        int left = getDecoratedLeft(firstVisibleView);
+        int leftOffset = left - getPaddingLeft() - dx;
+        while (leftOffset > 0) {
+            //左边漏空了，添加新的view，先判断前面是否还有view
+            mFirstVisiblePosition = fixPosition(--mFirstVisiblePosition);
+            View view = recycler.getViewForPosition(mFirstVisiblePosition);
+            //添加在左边
+            addView(view, 0);
+            measureChildWithMargins(view, 0, 0);
+            layoutDecoratedWithMargins(view, left - getDecoratedMeasuredWidth(view),
+                    getPaddingTop(), left,
+                    getPaddingTop() + getDecoratedMeasuredHeight(view));
+            //循环往左填充
+            //拿到左边第一个显示的view
+            firstVisibleView = getChildAt(0);
+            //获取第一个view的left
+            left = getDecoratedLeft(firstVisibleView);
+            leftOffset = left - getPaddingLeft() - dx;
+        }
+    }
+
+    /**
+     * 根据滑动距离填补漏出来的空白
+     * 如果滑动距离过大，需要填补多个条目
+     */
+    private void addRight(RecyclerView.Recycler recycler, int dx) {
+        //获取当前显示的最后一个view
+        View child = getChildAt(getChildCount() - 1);
+        //找RecyclerView要一个新view（判断现在显示的最后一个view是不是adapter的最后一个）
+        while (getDecoratedRight(child) - dx < getWidth() - getPaddingRight()) {
+            int left = getDecoratedLeft(child);
+            int width = getDecoratedMeasuredWidth(child);
+            mLastVisiblePosition = fixPosition(++mLastVisiblePosition);
+            View view = recycler.getViewForPosition(mLastVisiblePosition);
+            addView(view);
+            measureChildWithMargins(view, 0, 0);
+            layoutDecoratedWithMargins(view, left + width, getPaddingTop(),
+                    left + width + getDecoratedMeasuredWidth(view),
+                    getPaddingTop() + getDecoratedMeasuredHeight(view));
+            //循环往右填充
+            child = getChildAt(getChildCount() - 1);
+        }
     }
 
     /**
