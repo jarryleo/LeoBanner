@@ -343,6 +343,21 @@ public class InfiniteLayoutManager
     }
 
     @Override
+    public View findViewByPosition(int position) {
+        final int childCount = getChildCount();
+        if (childCount == 0) {
+            return null;
+        }
+        for (int i = childCount - 1; i >= 0; i--) {
+            final View child = getChildAt(i);
+            if (getPosition(child) == position) {
+                return child;
+            }
+        }
+        return super.findViewByPosition(position);
+    }
+
+    @Override
     public PointF computeScrollVectorForPosition(int targetPosition) {
         if (getChildCount() == 0) {
             return null;
@@ -356,6 +371,19 @@ public class InfiniteLayoutManager
         mHorizontalOffset = 0;
         mFirstVisiblePosition = 0;
         mLastVisiblePosition = 0;
+    }
+
+    public int getCurrentPosition() {
+        int cx = getWidth() / 2;
+        int childCount = getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View child = getChildAt(i);
+            if (getDecoratedLeft(child) < cx &&
+                    getDecoratedRight(child) > cx) {
+                return getPosition(child);
+            }
+        }
+        return mFirstVisiblePosition;
     }
 
     public int getFirstVisiblePosition() {
@@ -374,11 +402,11 @@ public class InfiniteLayoutManager
     //以下自动滚动部分
 
     public InfiniteLayoutManager(Context context) {
-        super(context,LinearLayoutManager.HORIZONTAL,false);
+        super(context, LinearLayoutManager.HORIZONTAL, false);
     }
 
-    public InfiniteLayoutManager(Context context,int interval) {
-        super(context,LinearLayoutManager.HORIZONTAL,false);
+    public InfiniteLayoutManager(Context context, int interval) {
+        super(context, LinearLayoutManager.HORIZONTAL, false);
         mInterval = interval;
     }
 
@@ -392,11 +420,7 @@ public class InfiniteLayoutManager
         }
         mRecyclerView.removeCallbacks(mRunnable);
         if (isVisible()) {
-            int lastPosition = mLastVisiblePosition < mFirstVisiblePosition ?
-                    mLastVisiblePosition + getItemCount() : mLastVisiblePosition;
-            int position = (lastPosition - mFirstVisiblePosition + 1) / 2
-                    + mFirstVisiblePosition + 1;
-            mRecyclerView.smoothScrollToPosition(fixPosition(position));
+            mRecyclerView.smoothScrollToPosition(fixPosition(getCurrentPosition() + 1));
         }
         mRecyclerView.postDelayed(mRunnable, mInterval);
     }
