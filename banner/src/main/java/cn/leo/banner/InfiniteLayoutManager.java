@@ -1,6 +1,7 @@
 package cn.leo.banner;
 
 import android.content.Context;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.PowerManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -341,6 +342,13 @@ public class InfiniteLayoutManager
         startSmoothScroll(linearSmoothScroller);
     }
 
+    @Override
+    public PointF computeScrollVectorForPosition(int targetPosition) {
+        if (getChildCount() == 0) {
+            return null;
+        }
+        return new PointF(1, 0);
+    }
 
     @Override
     public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
