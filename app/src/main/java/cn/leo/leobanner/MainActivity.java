@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView = findViewById(R.id.rvTest);
         mRecyclerView.setAdapter(new RvAdapter());
         //无限循环
-        mRecyclerView.setLayoutManager(new InfiniteLayoutManager(5000));
+        mRecyclerView.setLayoutManager(new InfiniteLayoutManager(this,5000));
         //滑动动画
         mRecyclerView.addItemDecoration(new ReflectionScaleDecoration());
         //指示器

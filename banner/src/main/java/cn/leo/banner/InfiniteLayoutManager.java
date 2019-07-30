@@ -1,9 +1,9 @@
 package cn.leo.banner;
 
 import android.content.Context;
-import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.PowerManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.PagerSnapHelper;
 import android.support.v7.widget.RecyclerView;
@@ -16,8 +16,7 @@ import android.view.View;
  * @date : 2018/11/15 15:36
  */
 public class InfiniteLayoutManager
-        extends RecyclerView.LayoutManager
-        implements RecyclerView.SmoothScroller.ScrollVectorProvider {
+        extends LinearLayoutManager {
     private static final String TAG = "InfiniteLayoutManager";
     /**
      * 现在第一个可见的view的在所有条目中的索引
@@ -266,6 +265,7 @@ public class InfiniteLayoutManager
         return (position % itemCount + itemCount) % itemCount;
     }
 
+
     /**
      * @return 是否允许纵向滑动
      */
@@ -341,13 +341,6 @@ public class InfiniteLayoutManager
         startSmoothScroll(linearSmoothScroller);
     }
 
-    @Override
-    public PointF computeScrollVectorForPosition(int targetPosition) {
-        if (getChildCount() == 0) {
-            return null;
-        }
-        return new PointF(1, 0);
-    }
 
     @Override
     public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
@@ -372,11 +365,12 @@ public class InfiniteLayoutManager
 
     //以下自动滚动部分
 
-
-    public InfiniteLayoutManager() {
+    public InfiniteLayoutManager(Context context) {
+        super(context,LinearLayoutManager.HORIZONTAL,false);
     }
 
-    public InfiniteLayoutManager(int interval) {
+    public InfiniteLayoutManager(Context context,int interval) {
+        super(context,LinearLayoutManager.HORIZONTAL,false);
         mInterval = interval;
     }
 
@@ -487,40 +481,15 @@ public class InfiniteLayoutManager
                 }
             };
 
+
     private PagerSnapHelper mInfiniteLayoutSnapHelper = new PagerSnapHelper() {
         @Override
         public int findTargetSnapPosition(RecyclerView.LayoutManager layoutManager,
                                           int velocityX, int velocityY) {
-            if (!(layoutManager instanceof RecyclerView.SmoothScroller.ScrollVectorProvider)) {
-                return RecyclerView.NO_POSITION;
-            }
-
-            final int itemCount = layoutManager.getItemCount();
-            if (itemCount == 0) {
-                return RecyclerView.NO_POSITION;
-            }
-
-            final View currentView = findSnapView(layoutManager);
-            if (currentView == null) {
-                return RecyclerView.NO_POSITION;
-            }
-
-            final int currentPosition = layoutManager.getPosition(currentView);
-            if (currentPosition == RecyclerView.NO_POSITION) {
-                return RecyclerView.NO_POSITION;
-            }
-            RecyclerView.SmoothScroller.ScrollVectorProvider vectorProvider =
-                    (RecyclerView.SmoothScroller.ScrollVectorProvider) layoutManager;
-            PointF vectorForEnd = vectorProvider.
-                    computeScrollVectorForPosition(itemCount - 1);
-            if (vectorForEnd == null) {
-                return RecyclerView.NO_POSITION;
-            }
-            int hDeltaJump = velocityX > 0 ? 1 : -1;
-            int targetPos = currentPosition + hDeltaJump;
-            return fixPosition(targetPos);
+            return RecyclerView.NO_POSITION;
         }
     };
+
 
     protected LinearSmoothScroller createSnapScroller() {
         return new LinearSmoothScroller(mRecyclerView.getContext()) {
