@@ -5,10 +5,8 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.PowerManager;
 import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.PagerSnapHelper;
 import android.support.v7.widget.RecyclerView;
-import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -31,14 +29,6 @@ public class InfiniteLayoutManager
      * 滑动距离
      */
     private int mHorizontalOffset;
-
-
-    @Override
-    public RecyclerView.LayoutParams generateDefaultLayoutParams() {
-        return new RecyclerView.LayoutParams(
-                RecyclerView.LayoutParams.WRAP_CONTENT,
-                RecyclerView.LayoutParams.WRAP_CONTENT);
-    }
 
     /**
      * 1 在RecyclerView初始化时，会被调用两次。
@@ -335,14 +325,6 @@ public class InfiniteLayoutManager
     }
 
     @Override
-    public void smoothScrollToPosition(RecyclerView recyclerView,
-                                       RecyclerView.State state, int position) {
-        LinearSmoothScroller linearSmoothScroller = createSnapScroller();
-        linearSmoothScroller.setTargetPosition(position);
-        startSmoothScroll(linearSmoothScroller);
-    }
-
-    @Override
     public View findViewByPosition(int position) {
         final int childCount = getChildCount();
         if (childCount == 0) {
@@ -355,14 +337,6 @@ public class InfiniteLayoutManager
             }
         }
         return super.findViewByPosition(position);
-    }
-
-    @Override
-    public PointF computeScrollVectorForPosition(int targetPosition) {
-        if (getChildCount() == 0) {
-            return null;
-        }
-        return new PointF(1, 0);
     }
 
     @Override
@@ -521,43 +495,4 @@ public class InfiniteLayoutManager
             return RecyclerView.NO_POSITION;
         }
     };
-
-
-    protected LinearSmoothScroller createSnapScroller() {
-        return new LinearSmoothScroller(mRecyclerView.getContext()) {
-            private static final float MILLISECONDS_PER_INCH = 25f;
-
-            @Override
-            protected void onTargetFound(View targetView, RecyclerView.State state, Action action) {
-                if (mRecyclerView == null) {
-                    // The associated RecyclerView has been removed so there is no action to take.
-                    return;
-                }
-                int[] snapDistances = mInfiniteLayoutSnapHelper.
-                        calculateDistanceToFinalSnap(mRecyclerView.getLayoutManager(),
-                                targetView);
-                final int dx = snapDistances[0];
-                final int dy = snapDistances[1];
-                final int time = calculateTimeForDeceleration(Math.max(Math.abs(dx), Math.abs(dy)));
-                if (time > 0) {
-                    action.update(dx, dy, time, mDecelerateInterpolator);
-                }
-            }
-
-            @Override
-            protected float calculateSpeedPerPixel(DisplayMetrics displayMetrics) {
-                return MILLISECONDS_PER_INCH / displayMetrics.densityDpi;
-            }
-
-            @Override
-            protected int calculateTimeForDeceleration(int dx) {
-                // we want to cover same area with the linear interpolator for the first 10% of the
-                // interpolation. After that, deceleration will take control.
-                // area under curve (1-(1-x)^2) can be calculated as (1 - x/3) * x * x
-                // which gives 0.100028 when x = .3356
-                // this is why we divide linear scrolling time with .3356
-                return (int) Math.ceil(calculateTimeForScrolling(dx) / .3356);
-            }
-        };
-    }
 }
