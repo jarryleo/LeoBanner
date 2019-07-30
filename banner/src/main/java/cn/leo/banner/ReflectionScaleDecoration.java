@@ -30,8 +30,17 @@ public class ReflectionScaleDecoration extends RecyclerView.ItemDecoration {
      */
     @Override
     public void onDrawOver(Canvas c, RecyclerView parent, RecyclerView.State state) {
+        RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
+        int childCount = layoutManager.getChildCount();
         if (mRecyclerView != parent) {
             mRecyclerView = parent;
+            //计算需要的缓存大小
+            View firstChild = layoutManager.getChildAt(0);
+            Bitmap bitmap = convertViewToBitmap(firstChild);
+            int byteCount = bitmap.getByteCount();
+            bitmap.recycle();
+            //设置阴影缓存大小
+            mBitmapCache = new BitmapCache((childCount + 1) * byteCount);
             //注册条目更新监听，为了重新生产阴影
             mRecyclerView.getAdapter().registerAdapterDataObserver(
                     new RecyclerView.AdapterDataObserver() {
@@ -54,9 +63,8 @@ public class ReflectionScaleDecoration extends RecyclerView.ItemDecoration {
             //布局完成前不绘制
             return;
         }
-        RecyclerView.LayoutManager layoutManager = parent.getLayoutManager();
         //当前显示的所有条目
-        int childCount = layoutManager.getChildCount();
+
         int centerX = parent.getMeasuredWidth() / 2;
         for (int i = 0; i < childCount; i++) {
             View child = layoutManager.getChildAt(i);
@@ -143,12 +151,12 @@ public class ReflectionScaleDecoration extends RecyclerView.ItemDecoration {
     }
 
 
-    private BitmapCache mBitmapCache = new BitmapCache();
+    private BitmapCache mBitmapCache;
 
     private class BitmapCache extends LruCache<Integer, Bitmap> {
 
-        private BitmapCache() {
-            super(5 * 1024 * 1024);
+        private BitmapCache(int size) {
+            super(size);
         }
 
         @Override
