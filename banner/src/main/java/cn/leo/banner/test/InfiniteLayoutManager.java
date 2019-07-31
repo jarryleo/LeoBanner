@@ -305,7 +305,7 @@ public class InfiniteLayoutManager
         if (getChildCount() == 0) {
             return null;
         }
-        if (mRecyclerView.getOnFlingListener() instanceof PagerSnapHelper){
+        if (mRecyclerView.getOnFlingListener() instanceof PagerSnapHelper) {
             return new PointF(1, 0);
         }
         return null;
@@ -314,14 +314,14 @@ public class InfiniteLayoutManager
     @Override
     public void startSmoothScroll(RecyclerView.SmoothScroller smoothScroller) {
         int targetPosition = smoothScroller.getTargetPosition();
-        if (!(mRecyclerView.getOnFlingListener() instanceof PagerSnapHelper)){
-            smoothScroller = new SmoothScroller(mRecyclerView.getContext());
-        }
+        System.out.println("targetPosition = " + targetPosition);
+        smoothScroller = new SmoothScroller(mRecyclerView.getContext());
         smoothScroller.setTargetPosition(fixPosition(targetPosition));
         super.startSmoothScroll(smoothScroller);
     }
 
-    private class SmoothScroller extends LinearSmoothScroller{
+
+    private class SmoothScroller extends LinearSmoothScroller {
         SmoothScroller(Context context) {
             super(context);
         }
@@ -330,6 +330,26 @@ public class InfiniteLayoutManager
         @Override
         public PointF computeScrollVectorForPosition(int targetPosition) {
             return new PointF(1, 0);
+        }
+
+        @Override
+        public int calculateDtToFit(int viewStart, int viewEnd, int boxStart, int boxEnd, int
+                snapPreference) {
+            switch (snapPreference) {
+                case SNAP_TO_START:
+                    return boxStart - viewStart;
+                case SNAP_TO_END:
+                    return boxEnd - viewEnd;
+                case SNAP_TO_ANY:
+                    int viewWidth = viewEnd - viewStart;
+                    int boxWidth = boxEnd - boxStart;
+                    int dtStart = (boxWidth - viewWidth) / 2;
+                    return dtStart - viewStart;
+                default:
+                    throw new IllegalArgumentException("snap preference should be one of the"
+                            + " constants defined in SmoothScroller, starting with SNAP_");
+            }
+            //return 0;
         }
     }
 
@@ -521,6 +541,8 @@ public class InfiniteLayoutManager
                     reverseLayout = vectorForEnd.x < 0 || vectorForEnd.y < 0;
                 }
             }
+
+            System.out.println("velocityX = " + velocityX);
             return reverseLayout
                     ? (forwardDirection ? centerPosition - 1 : centerPosition + 1)
                     : (forwardDirection ? centerPosition + 1 : centerPosition - 1);
